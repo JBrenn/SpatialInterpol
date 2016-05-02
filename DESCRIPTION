@@ -1,0 +1,17 @@
+Package: DataBaseAlpEnvEURAC
+Version: 0.0.1
+Date: 2016-05-02
+Title: Spatial Interpolation of Soil Variables | Province of Bolzano
+Author: Johannes Brenner <Johannes.Brenner@eurac.com>
+Maintainer: Johannes Brenner <Johannes.Brenner@eurac.com>
+Description: Spatial ordinary kriging and inverse direction weighting for soil variables (Province of Bolzano)
+LazyData: Yes
+LazyLoad: Yes
+Depends: R (>= 3.0.0)
+License: LGPL (>= 2)
+Imports:
+    sp,
+    raster,
+    caret,
+    SpatialPosition,
+    HydroPSO

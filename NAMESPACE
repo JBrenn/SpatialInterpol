@@ -1,0 +1,11 @@
+# Default NAMESPACE created by R
+# Remove the previous line if you edit this file
+
+import(sp)
+import(raster)
+import(caret)
+import(SpatialPosition)
+import(HydroPSO)
+
+# Export all names
+exportPattern(".")
