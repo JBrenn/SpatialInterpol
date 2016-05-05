@@ -7,13 +7,18 @@
 # library(caret)
 # library(SpatialPosition)
 
-OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig", 
+OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig", 
                       datafolder = "raw", rastermask = "mask/Mask_master.tif",
-                      local_krig = TRUE, inverseDistWeigths = FALSE,
+                      inverseDistWeigths = FALSE,
                       variable = "Humus____",  npix = 100,
                       c_off = c("AdigeVenosta"=400, "Adige"=400, "Venosta"=450), 
                       anis_deg = c("AdigeVenosta"=0, "Adige"=0, "Venosta"=90), 
                       anis_ax = c("AdigeVenosta"=.5, "Adige"=.5, "Venosta"=.5),
+                      psill = c("AdigeVenosta"=1, "Adige"=1, "Venosta"=1), 
+                      nugget = c("AdigeVenosta"=1, "Adige"=1, "Venosta"=1),
+                      nmax = c("AdigeVenosta"=12, "Adige"=12, "Venosta"=12), 
+                      nmin = c("AdigeVenosta"=1, "Adige"=1, "Venosta"=1),
+                      omax = c("AdigeVenosta"=3, "Adige"=3, "Venosta"=3),
                       idp = c("AdigeVenosta"=2.0, "Adige"=2.0, "Venosta"=2.0),
                       var_model="Sph",
                       validation = FALSE, kfold=5,
@@ -44,7 +49,7 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
     names(worktab) <- c("X","Y","VARIABLE")
     
     # zeros
-    if (variable == "Humus____") worktab[worktab$VARIABLE <= 0,"VARIABLE"] <- 0.001
+    worktab[worktab$VARIABLE <= 0,"VARIABLE"] <- 0.001
     
     if (validation)
     {
@@ -60,39 +65,57 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
         train_set <- worktab[-flds[[i]],]
         
         # train
-        # gstatVariogram - Calculate Sample variogram 
-        my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = c_off[namezone])
-        # Fit a Variogram Model to a Sample Variogram  
-        my_var_fit <- fit.variogram(my_var, vgm(1, var_model, c_off[namezone], 1, 
-                                                anis = c(anis_deg[namezone], anis_ax[namezone])))
         
-        dir.create(file.path(wpath, variable, "plot"), recursive = T)
-        
-        print("plotting variogram | using logvariogram")
-        pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_train",i,".png", sep=""))
-        png(file = pdfname)
+        if (!inverseDistWeigths)
+        {
+          # gstatVariogram - Calculate Sample variogram 
+          my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = c_off[namezone])
+          # Fit a Variogram Model to a Sample Variogram  
+          m <- vgm(psill = psill[namezone], model = var_model, range = c_off[namezone], nugget = nugget[namezone], 
+                   anis = c(anis_deg[namezone], anis_ax[namezone]))
+          my_var_fit <- fit.variogram(my_var, m)
+          
+          dir.create(file.path(wpath, variable, "plot"), recursive = T)
+          
+          print("plotting variogram | using logvariogram")
+          pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_train",i,".png", sep=""))
+          png(file = pdfname)
           plot(my_var, my_var_fit)
-        dev.off()
-        
+          dev.off()
+        }
+
         # validation set
         valid_set <- worktab[flds[[i]],]
         
-        # Ordinary Kriging
+        Xnew <- valid_set[,c("X", "Y")]
+        Xnew <- SpatialPoints(Xnew)
         
-          Xnew <- valid_set[,c("X", "Y")]
-          Xnew <- SpatialPoints(Xnew)
+        myloc <- data.frame("X" = train_set$X,"Y" = train_set$Y)
+        myloc <- SpatialPoints(myloc)
         
-          myloc <- data.frame("X" = train_set$X,"Y" = train_set$Y)
-          myloc <- SpatialPoints(myloc)
+        if (inverseDistWeigths) {
           
-          ord_krig <- krige(formula = train_set$VARIABLE~1, locations = myloc,
-                            newdata = Xnew,
-                            model = my_var_fit, nmax = 10, nmin = 1, maxdist = c_off[namezone])
+          # Inverse Distance Weighting
+          ord_krig <- gstat::idw(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, idp = idp[namezone],
+                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
+          
+          names(ord_krig) <- c("predict")
+          
+          val_out_var[[paste("fold", i, sep="")]] <- list(vario = my_var, vario_fit = my_var_fit)
+          val_out_df <- rbind(val_out_df, data.frame(fold=i ,valid_set, ord_krig$predict))
+          
+        } else {
+          
+          # Ordinary Kriging
+          ord_krig <- gstat::krige(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, model = m,
+                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
           
           names(ord_krig) <- c("predict", "variance")
           
           val_out_var[[paste("fold", i, sep="")]] <- list(vario = my_var, vario_fit = my_var_fit)
           val_out_df <- rbind(val_out_df, data.frame(fold=i ,valid_set, ord_krig$predict, ord_krig$variance))
+        }
+
                                                     
       }
       
@@ -100,12 +123,14 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
      
     } else {
       
+    if (!inverseDistWeigths)
+    {
       # Choose parameters as function arguments
       
       # gstatVariogram - Calculate Sample variogram 
-      my_var <- variogram(log(VARIABLE)~1,data=worktab, locations = ~X+Y, cutoff = c_off[namezone])
+      my_var <- variogram(log(VARIABLE)~1, data=worktab, locations = ~X+Y, cutoff = c_off[namezone])
       # Fit a Variogram Model to a Sample Variogram  
-      m <- vgm(psill = 1, model = var_model, range = c_off[namezone], nugget = 1, 
+      m <- vgm(psill = psill[namezone], model = var_model, range = c_off[namezone], nugget = nugget[namezone], 
                anis = c(anis_deg[namezone], anis_ax[namezone]))
       my_var_fit <- fit.variogram(my_var, m)
       
@@ -113,62 +138,14 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
       dir.create(file.path(wpath, variable, "plot"), recursive = T)
       
       print("plotting variogram in png | using logvariogram")
-       pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_cal.png", sep=""))
+      pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_cal.png", sep=""))
       pdf(file = pdfname)
-        plot(my_var, my_var_fit)
+      plot(my_var, my_var_fit)
       dev.off()
-      
+    }
+ 
       coordinates(worktab) <- ~X+Y
       crs(worktab) <- coordsys
-      
-      if (local_krig) {
-        
-        # get x-y sequence by npix (grid resolution / default = 10m)  
-        x_range <- range(worktab$X)
-        y_range <- range(worktab$Y)
-        x <- seq(x_range[1],x_range[2],by=npix)
-        y <- seq(y_range[1],y_range[2],by=npix)
-        
-        # # create SpatialPoits from sequence
-        Xnew <- cbind(rep(x,length(y)),rep(y,each=length(x)))
-        Xnew <- SpatialPoints(Xnew)
-        crs(Xnew) <- coordsys
-        # 
-        # # locations as SpatialPoints
-        # myloc <- data.frame("X" = worktab$X,"Y" = worktab$Y)
-        # myloc <- SpatialPoints(myloc)
-        
-        ord_krig <- krige(formula = worktab$VARIABLE~1, locations = worktab,
-                          newdata = Xnew,
-                          model = m, nmax = 10, nmin = 1, maxdist = c_off[namezone])
-        
-        names(ord_krig) <- c("predict", "variance")
-        
-        # create raster from krigging matrix 
-        predict <- matrix(ord_krig$predict, nrow = length(x), byrow = FALSE)
-        
-        dat1 <- list()
-        dat1$x <- x
-        dat1$y <- y
-        dat1$z <- predict
-        r_pred <- raster(dat1)
-        names(r_pred) <- "predict"
-        
-        variance <- matrix(ord_krig$variance, nrow = length(x), byrow = FALSE)
-        dat1$z <- variance
-        r_vari <- raster(dat1)
-        names(r_vari) <- "variance"
-        
-        # export raster as GeoTiff
-        # different possible formats see ?writeRaster
-        dir.create(file.path(wpath, variable, "maps"), recursive = T)
-        print("write .tif map files")
-        writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_predict_local.tif",sep="")),
-                    overwrite=TRUE, format="GTiff")
-        writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_variance_local.tif",sep="")),
-                    overwrite=TRUE, format="GTiff")
-        
-      } else {
         
         if (!is.na(rastermask)) {
           
@@ -203,7 +180,8 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
         
         # Ordinary krigging (gstat)
         if (inverseDistWeigths) {
-          ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone])
+          ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone],
+                                 nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = c_off[namezone])
           
           names(ord_krig) <- c("predict", "variance")
           
@@ -218,7 +196,8 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
           
         } else {
           
-          ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, model = m)
+          ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m,
+                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
           
           names(ord_krig) <- c("predict", "variance")
           
@@ -234,8 +213,6 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
           writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_variance_sp_krige.tif",sep="")),
                       overwrite=TRUE, format="GTiff")
         }
-        
-      }
       
       val_list[[namezone]] <- list(vario = my_var, vario_fit = my_var_fit, krig = ord_krig)
       
@@ -244,10 +221,12 @@ OrdKrig <- function ( wpath = "C:/Users/JBrenner/Desktop/OrdKrig",
     }
     
   if (validation) {
-    save(list = "val_list", file = file.path(wpath, variable, "validation.RData"))
+    if (inverseDistWeigths) save(list = "val_list", file = file.path(wpath, variable, "validation_idw.RData"))
+    if (!inverseDistWeigths) save(list = "val_list", file = file.path(wpath, variable, "validation_krige.RData"))
     return(val_list)
   } else {
-    save(list = "val_list", file = file.path(wpath, variable, "NOvalidation.RData"))
+    if (inverseDistWeigths) save(list = "val_list", file = file.path(wpath, variable, "NOvalidation_idw.RData"))
+    if (!inverseDistWeigths) save(list = "val_list", file = file.path(wpath, variable, "NOvalidation_krige.RData"))
     return(val_list)
   }
   

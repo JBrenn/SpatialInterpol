@@ -9,12 +9,11 @@
 # library(hydroGOF)
 # library(sp)
 
-OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5),
-                                wpath = "C:/Users/JBrenner/Desktop/OrdKrig", 
+OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3, nugget=1),
+                                wpath = "/home/jbre/R/OrdKrig", 
                                 datafile = "raw/Masterfile_Adige.txt",
                                 variable = "Humus____",
-                                var_model="Sph", kfold=5
-                                )
+                                var_model="Sph", kfold=5)
 {
   # read table 
   worktab <- read.table(file = file.path(wpath, datafile), header = TRUE, sep = ",",dec = ".")
@@ -26,7 +25,7 @@ OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5),
   names(worktab) <- c("X","Y","VARIABLE")
   
   # zeros
-  if (variable == "Humus____") worktab[worktab$VARIABLE <= 0,"VARIABLE"] <- 0.001
+  worktab[worktab$VARIABLE <= 0,"VARIABLE"] <- 0.001
   
   # get 5 folds
   flds <- createFolds(y = worktab$VARIABLE, k = kfold, list = TRUE, returnTrain = FALSE)
@@ -41,9 +40,9 @@ OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5),
     # train
     # gstatVariogram - Calculate Sample variogram 
     my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = par[1])
-    # Fit a Variogram Model to a Sample Variogram  
-    my_var_fit <- fit.variogram(my_var, vgm(1, var_model, par[1], 1, 
-                                            anis = c(par[2], par[3])))
+    # Fit a Variogram Model to a Sample Variogram
+    m <- vgm(1, var_model, par[1], par[6], anis = c(par[2], par[3]))
+    my_var_fit <- fit.variogram(my_var, m)
     
     # validation set
     valid_set <- worktab[flds[[i]],]
@@ -56,9 +55,8 @@ OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5),
     myloc <- data.frame("X" = train_set$X,"Y" = train_set$Y)
     myloc <- SpatialPoints(myloc)
     
-    ord_krig <- krige(formula = train_set$VARIABLE~1, locations = myloc,
-                      newdata = Xnew,
-                      model = my_var_fit, nmax = 10, nmin = 1, maxdist = par[1])
+    ord_krig <- krige(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, model = m,
+                      nmax = par[4], nmin = 1, omax = par[5], maxdist = m$range[2])
     
     names(ord_krig) <- c("predict", "variance")
     
@@ -71,6 +69,7 @@ OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5),
 }
 
 # # 
-hydroPSO::hydroPSO(fn = OrdKrig_optim, method="ipso",
-                  lower = c(0,0,0), upper = c(1000,360,1),  
-                  control=list(npart=40, parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
+hydroPSO::hydroPSO(fn = OrdKrig_optim_krige, method="spso2011",
+                  lower = c(0,0,0.01,8,1,0), upper = c(1000,359,1,100,25,10),
+                  control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_krige", npart=40, 
+                               parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
