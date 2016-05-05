@@ -6,7 +6,7 @@
 
 # library(gstat)
 # library(caret)
-# library(hydroGOF)
+# library(hydroPSO)
 # library(sp)
 
 OrdKrig_optim_idw <- function(par = c(idp = 2.0, search_dist=300, nmax=12, omax=3),
@@ -58,13 +58,16 @@ OrdKrig_optim_idw <- function(par = c(idp = 2.0, search_dist=300, nmax=12, omax=
       
     }
   
-  return(RMSE(pred = val_out_df$ESTIM, obs = val_out_df$VARIABLE, na.rm = T))
+  return(RMSE(pred = val_out_df$ord_krig.predict, obs = val_out_df$VARIABLE, na.rm = T))
   
 }
 
-# windows machine
-hydroPSO::hydroPSO(fn = OrdKrig_optim_idw, method="spso2011",
-                   lower = c(1,100,8,1), upper = c(16,1000,100,25),
-                   control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_idw", npart=40, 
-                                parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
+# # keep care: trade of between search distance and number of NA estimations
+# # the smaller the search radius, the better the estimation - but lot of NAs
+# # How to solve?
+
+# hydroPSO::hydroPSO(fn = OrdKrig_optim_idw, method="spso2011",
+#                    lower = c(1,100,8,1), upper = c(16,1000,100,25),
+#                    control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_idw", npart=40, 
+#                                 parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
 

@@ -6,7 +6,7 @@
 
 # library(gstat)
 # library(caret)
-# library(hydroGOF)
+# library(hydroPSO)
 # library(sp)
 
 OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3, nugget=1),
@@ -68,8 +68,11 @@ OrdKrig_optim_krige <- function(par = c(c_off=300, anis_deg=0, anis_ax=.5, nmax=
   
 }
 
-# # 
-hydroPSO::hydroPSO(fn = OrdKrig_optim_krige, method="spso2011",
-                  lower = c(0,0,0.01,8,1,0), upper = c(1000,359,1,100,25,10),
-                  control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_krige", npart=40, 
-                               parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
+# # keep care: trade of between search distance and number of NA estimations
+# # the smaller the search radius, the better the estimation - but lot of NAs
+# # How to solve?
+# 
+# hydroPSO::hydroPSO(fn = OrdKrig_optim_krige, method="spso2011",
+#                   lower = c(0,0,0.01,8,1,0), upper = c(1000,359,1,100,25,10),
+#                   control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_krige", npart=40, 
+#                                parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
