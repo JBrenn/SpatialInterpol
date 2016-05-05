@@ -199,7 +199,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           # different possible formats see ?writeRaster
           dir.create(file.path(wpath, variable, "maps"), recursive = T)
           print("write .tif map files")
-          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_predict_sp_idw.tif",sep="")),
+          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_predict_sp_idw.tif",sep="")),
                       overwrite=TRUE, format="GTiff")
           
           val_list[[namezone]] <- list(krig = ord_krig)
