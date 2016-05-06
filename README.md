@@ -1,6 +1,6 @@
 # SpatialInterpol
 
-A wrapper of krige::idw (inverse distance weighting) and krige::krige (local ordinary krigging). Function \emph{krige} is preparing simple .txt files for the use with \emph{krige} and \emph{idw}, performing interpolation and writing GEOtif maps. Optimisation functions are available for krige and idw and can be se with \emph{optim} or \emph{hydrPSO}.   
+A wrapper of gstat::idw (inverse distance weighting) and gstat::krige (local ordinary krigging). Function **OrdKrig** is preparing simple .txt files for the use with _krige_ and _idw_, performing interpolation and writing GEOtif maps. Optimisation functions are available for krige and idw and can be used with _optim_ or _hydrPSO_.   
 
 # How to start
 
