@@ -12,8 +12,7 @@
 OrdKrig_optim_idw <- function(par = c(idp = 2.0, maxdist=300, nmax=12, omax=3),
                                 wpath = "/home/jbre/R/OrdKrig", 
                                 datafile = "master/Masterfile_AdigeVenosta.txt",
-                                variable = "Humus____",
-                                var_model = "Sph", kfold = 5
+                                variable = "Humus____"
                               )
 {
   # read table 
