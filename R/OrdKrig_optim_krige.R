@@ -13,7 +13,7 @@ OrdKrig_optim_krige <- function(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax
                                 wpath = "/home/jbre/R/OrdKrig", 
                                 datafile = "raw/Masterfile_Adige.txt",
                                 variable = "Humus____",
-                                var_model="Sph", kfold=5)
+                                model="Sph", kfold=5)
 {
   # read table 
   worktab <- read.table(file = file.path(wpath, datafile), header = TRUE, sep = ",",dec = ".")
@@ -41,7 +41,7 @@ OrdKrig_optim_krige <- function(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax
     # gstatVariogram - Calculate Sample variogram 
     my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = par[1])
     # Fit a Variogram Model to a Sample Variogram
-    m <- vgm(1, var_model, par[1], par[6], anis = c(par[2], par[3]))
+    m <- vgm(1, model, par[1], par[6], anis = c(par[2], par[3]))
     my_var_fit <- fit.variogram(my_var, m)
     
     # validation set
