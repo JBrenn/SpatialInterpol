@@ -5,7 +5,7 @@
 Optimization function inverse distance weighting
 }
 \description{
-Optimization function performing 5-fold validation and returning RMSE of estimates.
+Optimization function performing 5-fold validation and returning RMSE of estimates for inverse distance weighting.
 }
 \usage{
 OrdKrig_optim_idw(par = c(idp = 2.0, maxdist=300, nmax=12, omax=3),

@@ -2,10 +2,10 @@
 \alias{OrdKrig_optim_krige}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Optimization function local ordinary krigging
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Optimization function performing 5-fold validation and returning RMSE of estimates for local ordinary krigging.
 }
 \usage{
 OrdKrig_optim_krige(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3, nugget=1),
