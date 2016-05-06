@@ -5,7 +5,7 @@
 Ordinarg local krigging and inverse distance weighting
 }
 \description{
-Ordinarg local krigging and inverse distance weighting. A wrapper of krige::krige and krige::idw providing GEOtif raster output according to a give raster mask.  
+Ordinarg local krigging and inverse distance weighting. A wrapper of krige::krige and krige::idw providing GEOtif raster output according to a given raster mask.  
 }
 \usage{
 OrdKrig(wpath = "/home/jbre/R/OrdKrig", 
