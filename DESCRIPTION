@@ -1,4 +1,4 @@
-Package: DataBaseAlpEnvEURAC
+Package: SpatialInterpol
 Version: 0.0.1
 Date: 2016-05-02
 Title: Spatial Interpolation of Soil Variables | Province of Bolzano
@@ -13,8 +13,7 @@ Imports:
     sp,
     raster,
     caret,
-    SpatialPosition,
-    HydroPSO
+    SpatialPosition
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

@@ -5,7 +5,6 @@ import(sp)
 import(raster)
 import(caret)
 import(SpatialPosition)
-import(HydroPSO)
 
 # Export all names
 exportPattern(".")
