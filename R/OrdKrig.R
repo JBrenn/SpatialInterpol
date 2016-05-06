@@ -11,7 +11,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
                       datafolder = "raw", rastermask = "mask/Mask_master.tif",
                       inverseDistWeigths = FALSE,
                       variable = "Humus____",  npix = 100,
-                      c_off = c("AdigeVenosta"=400, "Adige"=400, "Venosta"=450), 
+                      cutoff = c("AdigeVenosta"=400, "Adige"=400, "Venosta"=450), 
                       anis_deg = c("AdigeVenosta"=0, "Adige"=0, "Venosta"=90), 
                       anis_ax = c("AdigeVenosta"=.5, "Adige"=.5, "Venosta"=.5),
                       psill = c("AdigeVenosta"=1, "Adige"=1, "Venosta"=1), 
@@ -20,7 +20,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
                       nmin = c("AdigeVenosta"=1, "Adige"=1, "Venosta"=1),
                       omax = c("AdigeVenosta"=3, "Adige"=3, "Venosta"=3),
                       idp = c("AdigeVenosta"=2.0, "Adige"=2.0, "Venosta"=2.0),
-                      var_model="Sph",
+                      model="Sph",
                       validation = FALSE, kfold=5,
                       coordsys = "+proj=utm +zone=32 ellps=WGS84"
                     )
@@ -69,9 +69,9 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
         if (!inverseDistWeigths)
         {
           # gstatVariogram - Calculate Sample variogram 
-          my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = c_off[namezone])
+          my_var <- variogram(log(VARIABLE)~1, data=train_set, locations = ~X+Y, cutoff = cutoff[namezone])
           # Fit a Variogram Model to a Sample Variogram  
-          m <- vgm(psill = psill[namezone], model = var_model, range = c_off[namezone], nugget = nugget[namezone], 
+          m <- vgm(psill = psill[namezone], model = model, range = cutoff[namezone], nugget = nugget[namezone], 
                    anis = c(anis_deg[namezone], anis_ax[namezone]))
           my_var_fit <- fit.variogram(my_var, m)
           
@@ -97,7 +97,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           
           # Inverse Distance Weighting
           ord_krig <- gstat::idw(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, idp = idp[namezone],
-                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = c_off[namezone])
+                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
           
           names(ord_krig) <- c("predict")
         
@@ -126,9 +126,9 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
       # Choose parameters as function arguments
       
       # gstatVariogram - Calculate Sample variogram 
-      my_var <- variogram(log(VARIABLE)~1, data=worktab, locations = ~X+Y, cutoff = c_off[namezone])
+      my_var <- variogram(log(VARIABLE)~1, data=worktab, locations = ~X+Y, cutoff = cutoff[namezone])
       # Fit a Variogram Model to a Sample Variogram  
-      m <- vgm(psill = psill[namezone], model = var_model, range = c_off[namezone], nugget = nugget[namezone], 
+      m <- vgm(psill = psill[namezone], model = model, range = cutoff[namezone], nugget = nugget[namezone], 
                anis = c(anis_deg[namezone], anis_ax[namezone]))
       my_var_fit <- fit.variogram(my_var, m)
       
@@ -145,8 +145,6 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
       coordinates(worktab) <- ~X+Y
       crs(worktab) <- coordsys
       
-      
-        
         if (!is.na(rastermask)) {
           
           # get raster mask
@@ -189,7 +187,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
         # Ordinary krigging (gstat)
         if (inverseDistWeigths) {
           ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone],
-                                 nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = c_off[namezone])
+                                 nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
           
           names(ord_krig) <- c("predict", "variance")
           
