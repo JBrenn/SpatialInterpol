@@ -8,26 +8,42 @@
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-OrdKrig_optim_krige(x)
+OrdKrig_optim_krige(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3, nugget=1),
+                            wpath = "/home/jbre/R/OrdKrig", 
+                            datafile = "raw/Masterfile_Adige.txt",
+                            variable = "Humus____",
+                            model="Sph", kfold=5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
-%%     ~~Describe \code{x} here~~
+   \item{par}{
+see \code{\link[stats]{optim}} or \code{\link[hydroPSO]{hydroPSO}}. For names of vector \emph{par} see  \code{\link[gstat]{idw}}
 }
+  \item{wpath}{
+see \code{\link{OrdKrig}}
+}
+  \item{datafile}{
+path to and name of the data to optimize on
+}
+  \item{variable}{
+see \code{\link{OrdKrig}}
+}
+  \item{model}{
+see \code{\link[gstat]{fit.variogram}}
+}
+  \item{kfold}{
+see \code{\link[caret]{createFolds}}
+}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+RMSE of local ordinary krigging estimations vs. observed data
 }
 \references{
-%% ~put references to the literature/web site here ~
+Johannes Brenner, \email{johannesbrenner@gmail.com}
 }
 \author{
 %%  ~~who you are~~
@@ -42,14 +58,12 @@ OrdKrig_optim_krige(x)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+# do not run!
 
-## The function is currently defined as
-function (x) 
-{
-  }
+# hydroPSO::hydroPSO(fn = OrdKrig_optim_krige, method="spso2011",
+#                   lower = c(0,0,0.01,8,1,0), upper = c(1000,359,1,100,25,10),
+#                   control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_krige", npart=40, 
+#                                parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -2,35 +2,43 @@
 \alias{OrdKrig_optim_idw}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+Optimization function inverse distance weighting
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Optimization function performing 5-fold validation and returning RMSE of estimates.
 }
 \usage{
-OrdKrig_optim_idw(x)
+OrdKrig_optim_idw(par = c(idp = 2.0, maxdist=300, nmax=12, omax=3),
+                  wpath = "/home/jbre/R/OrdKrig", 
+                  datafile = "master/Masterfile_AdigeVenosta.txt",
+                  variable = "Humus____")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{x}{
-%%     ~~Describe \code{x} here~~
+  \item{par}{
+see \code{\link[stats]{optim}} or \code{\link[hydroPSO]{hydroPSO}}. For names of vector \emph{par} see  \code{\link[gstat]{idw}}
+}
+  \item{wpath}{
+see \code{\link{OrdKrig}}
+}
+  \item{datafile}{
+path to and name of the data to optimize on
+}
+  \item{variable}{
+see \code{\link{OrdKrig}}
 }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
+RMSE of local inverse distance weights estimations vs. observed data
 }
 \references{
 %% ~put references to the literature/web site here ~
 }
 \author{
-%%  ~~who you are~~
+Johannes Brenner, \email{johannesbrenner@gmail.com}
 }
 \note{
 %%  ~~further notes~~
@@ -42,14 +50,12 @@ OrdKrig_optim_idw(x)
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+# do not run!
 
-## The function is currently defined as
-function (x) 
-{
-  }
+# hydroPSO::hydroPSO(fn = OrdKrig_optim_idw, method="spso2011",
+#                    lower = c(1,100,8,1), upper = c(16,1000,100,25),
+#                    control=list(drty.out = "/home/jbre/R/OrdKrig/PSO_idw", npart=40, 
+#                                 parallel="none", par.pkgs = c("gstat","caret","hydroGOF","sp")))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
