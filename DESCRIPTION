@@ -13,7 +13,8 @@ Imports:
     sp,
     raster,
     caret,
-    SpatialPosition
+    SpatialPosition,
+    gstat
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
