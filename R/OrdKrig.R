@@ -52,7 +52,8 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
         print(paste("argument",  names(args)[arg], "is not given with name of investigated zone and differs in length from input .csv files in the folder", datafolder, ". Please check!", sep=" " ))
       }
     }
-  
+  }
+    
   val_list <- list()
   
   for (namefile in filesIN)
