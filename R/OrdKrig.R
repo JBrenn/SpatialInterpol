@@ -28,6 +28,31 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
   
   filesIN <- dir(file.path(wpath, datafolder))
   
+  if (is.null(names(cutoff)))
+  {
+    namezones <- c()
+    for (namefile in filesIN)
+    {
+      nr_char <- nchar(filesIN)
+      names(nr_char) <- filesIN
+      namezone <- strsplit(substr(namefile,1,nr_char[namefile]-4), "_")[[1]][2]
+      namezones <- c(namezones, namezone)
+    }
+    
+    args <- list("cutoff"=cutoff, "anis_deg"=anis_deg,"anis_ax"=anis_ax,"psill"=psill,
+                 "nugget"=nugget,"nmax"=nmax,"nmin"=nmin,"idp"=idp)
+    
+    for (arg in 1:length(args))
+    {
+      x <- args[[arg]]
+      if (length(x)==length(namezones)) {
+        names(x) <- namezones
+        assign(x = names(args)[arg], value = x) 
+      } else {
+        print(paste("argument",  names(args)[arg], "is not given with name of investigated zone and differs in length from input .csv files in the folder", datafolder, ". Please check!", sep=" " ))
+      }
+    }
+  
   val_list <- list()
   
   for (namefile in filesIN)
