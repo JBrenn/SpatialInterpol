@@ -2,10 +2,10 @@
 \alias{OrdKrig}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Ordinary local krigging and inverse distance weighting
+Ordinary local kriging and inverse distance weighting
 }
 \description{
-Ordinarg local krigging and inverse distance weighting. Using global varigram estimation (\code{\link[gstat]{variogram}}) and krige::krige, krige::idw (\code{\link[gstat]{krige}}) providing GEOtif raster output according to a given raster mask.  
+Ordinary local kriging and inverse distance weighting. Using global variogram estimation (see \code{\link[gstat]{variogram}}) and krige::krige.locations, krige::idw.locations (see \code{\link[gstat]{krige}}), providing GEOtif raster output according to a given raster mask.  
 }
 \usage{
 OrdKrig(wpath = "/home/jbre/R/OrdKrig", 
@@ -37,7 +37,7 @@ folder within \emph{wpath} containing raw data files
 folder within \emph{wpath} containing raster mask
 }
   \item{inverseDistWeigths}{
-boolean, if TRUE method is invers distance weighting (IDW), else method is local krigging
+boolean, if TRUE method is invers distance weighting (IDW), else method is local kriging
 }
   \item{variable}{
 character, variable name to interpolate, choose according to the column name of the input data files

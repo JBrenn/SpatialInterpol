@@ -2,10 +2,10 @@
 \alias{OrdKrig_optim_krige}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Optimization function local ordinary krigging
+Optimization function local ordinary kriging
 }
 \description{
-Optimization function performing 5-fold validation and returning RMSE of estimates for local ordinary krigging.
+Optimization function performing 5-fold validation and returning RMSE of estimates for local ordinary kriging.
 }
 \usage{
 OrdKrig_optim_krige(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3, nugget=1),
@@ -17,7 +17,7 @@ OrdKrig_optim_krige(par = c(cutoff=300, anis_deg=0, anis_ax=.5, nmax=12, omax=3,
 %- maybe also 'usage' for other objects documented here.
 \arguments{
    \item{par}{
-see \code{\link[stats]{optim}} or \code{\link[hydroPSO]{hydroPSO}}. For names of vector \emph{par} see  \code{\link[gstat]{idw}}
+see \code{\link[stats]{optim}} or \code{\link[hydroPSO]{hydroPSO}}. For names of vector \emph{par} see  \code{\link[gstat]{idw}}.
 }
   \item{wpath}{
 see \code{\link{OrdKrig}}
@@ -40,7 +40,7 @@ see \code{\link[caret]{createFolds}}
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-RMSE of local ordinary krigging estimations vs. observed data
+RMSE of local ordinary kriging estimations vs. observed data
 }
 \references{
 Johannes Brenner, \email{johannesbrenner@gmail.com}
