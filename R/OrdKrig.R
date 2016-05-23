@@ -30,6 +30,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
   
   if (is.null(names(cutoff)))
   {
+    # get namezones according to input files 
     namezones <- c()
     for (namefile in filesIN)
     {
@@ -39,9 +40,11 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
       namezones <- c(namezones, namezone)
     }
     
+    # list of arguments
     args <- list("cutoff"=cutoff, "anis_deg"=anis_deg,"anis_ax"=anis_ax,"psill"=psill,
                  "nugget"=nugget,"nmax"=nmax,"nmin"=nmin,"idp"=idp)
     
+    # assing argument names to parameter value (named vector)
     for (arg in 1:length(args))
     {
       x <- args[[arg]]
@@ -100,14 +103,6 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           m <- vgm(psill = psill[namezone], model = model, range = cutoff[namezone], nugget = nugget[namezone], 
                    anis = c(anis_deg[namezone], anis_ax[namezone]))
           my_var_fit <- fit.variogram(my_var, m)
-          
-          dir.create(file.path(wpath, variable, "plot"), recursive = T)
-          
-          print("plotting variogram | using logvariogram")
-          pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_train",i,".png", sep=""))
-          png(file = pdfname)
-          plot(my_var, my_var_fit)
-          dev.off()
         }
 
         # validation set
@@ -157,15 +152,6 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
       m <- vgm(psill = psill[namezone], model = model, range = cutoff[namezone], nugget = nugget[namezone], 
                anis = c(anis_deg[namezone], anis_ax[namezone]))
       my_var_fit <- fit.variogram(my_var, m)
-      
-      # Should be normalized
-      dir.create(file.path(wpath, variable, "plot"), recursive = T)
-      
-      print("plotting variogram in png | using logvariogram")
-      pdfname <- file.path(wpath, variable, "plot", paste(namezone, "_", variable, "_pix_", npix, "_varfit_cal.png", sep=""))
-      pdf(file = pdfname)
-      plot(my_var, my_var_fit)
-      dev.off()
     }
  
       coordinates(worktab) <- ~X+Y
