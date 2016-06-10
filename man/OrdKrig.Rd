@@ -10,7 +10,7 @@ Ordinary local kriging and inverse distance weighting. Using global variogram es
 \usage{
 OrdKrig(wpath = "/home/jbre/R/OrdKrig", 
         datafolder = "raw", rastermask = "mask/Mask_master.tif",
-        inverseDistWeigths = FALSE,
+        inverseDistWeigths = FALSE, local = TRUE,
         variable = "Humus____",  npix = 100,
         cutoff = c("AdigeVenosta"=400, "Adige"=400, "Venosta"=450), 
         anis_deg = c("AdigeVenosta"=0, "Adige"=0, "Venosta"=90), 
@@ -38,6 +38,9 @@ folder within \emph{wpath} containing raster mask
 }
   \item{inverseDistWeigths}{
 boolean, if TRUE method is invers distance weighting (IDW), else method is local kriging
+}
+  \item{local}{
+boolean, if TRUE local kriging, else global kriging, see \code{\link[gstat]{krige}}
 }
   \item{variable}{
 character, variable name to interpolate, choose according to the column name of the input data files

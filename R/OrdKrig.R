@@ -9,7 +9,7 @@
 
 OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig", 
                       datafolder = "raw", rastermask = "mask/Mask_master.tif",
-                      inverseDistWeigths = FALSE,
+                      inverseDistWeigths = FALSE, local=TRUE,
                       variable = "Humus____",  npix = 100,
                       cutoff = c("AdigeVenosta"=400, "Adige"=400, "Venosta"=450), 
                       anis_deg = c("AdigeVenosta"=0, "Adige"=0, "Venosta"=90), 
@@ -116,7 +116,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
         
         if (inverseDistWeigths) {
           
-          # Inverse Distance Weighting
+          # Inverse Distance Weighting (local only)
           ord_krig <- gstat::idw(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, idp = idp[namezone],
                                    nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
           
@@ -126,7 +126,7 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           
         } else {
           
-          # Ordinary Kriging
+          # Ordinary Kriging (local only)
           ord_krig <- gstat::krige(formula = train_set$VARIABLE~1, locations = myloc, newdata = Xnew, model = m,
                                    nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
           
@@ -198,8 +198,13 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
         
         # Ordinary krigging (gstat)
         if (inverseDistWeigths) {
-          ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone],
-                                 nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
+          
+          if (local) {
+            ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone],
+                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
+          } else {
+            ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone])
+          }
           
           names(ord_krig) <- c("predict", "variance")
           
@@ -216,8 +221,13 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           
         } else {
           
-          ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m,
-                                   nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
+          if (local) {
+            ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m,
+                                     nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
+          } else {
+            ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m)
+          }
+        
           
           names(ord_krig) <- c("predict", "variance")
           
