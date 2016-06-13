@@ -202,8 +202,10 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           if (local) {
             ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone],
                                    nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = cutoff[namezone])
+            locglob <- "local"
           } else {
             ord_krig <- gstat::idw(formula = worktab$VARIABLE~1, worktab, mask_sppxdf, idp = idp[namezone])
+            locglob <- "global"
           }
           
           names(ord_krig) <- c("predict", "variance")
@@ -214,18 +216,20 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           # different possible formats see ?writeRaster
           dir.create(file.path(wpath, variable, "maps"), recursive = T)
           print("write .tif map files")
-          writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_predict_sp_idw.tif",sep="")),
+          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_predict_sp_idw.tif",sep="")),
                       overwrite=TRUE, format="GTiff")
           
-          val_list[[namezone]] <- list(krig = ord_krig, maps = r_pred)
+          val_list[[namezone]] <- list(krig = ord_krig, map_pred = r_pred)
           
         } else {
           
           if (local) {
             ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m,
                                      nmax = nmax[namezone], nmin = nmin[namezone], omax = omax[namezone], maxdist = m$range[2])
+            locglob <- "local"
           } else {
             ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m)
+            locglob <- "global"
           }
         
           
@@ -238,12 +242,12 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           # different possible formats see ?writeRaster
           dir.create(file.path(wpath, variable, "maps"), recursive = T)
           print("write .tif map files")
-          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_predict_sp_krige.tif",sep="")),
+          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_predict_sp_krige.tif",sep="")),
                       overwrite=TRUE, format="GTiff")
-          writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_variance_sp_krige.tif",sep="")),
+          writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_variance_sp_krige.tif",sep="")),
                       overwrite=TRUE, format="GTiff")
           
-          val_list[[namezone]] <- list(vario = my_var, vario_fit = my_var_fit, krig = ord_krig, maps = list(pred=r_pred, var=r_vari))
+          val_list[[namezone]] <- list(vario = my_var, vario_fit = my_var_fit, krig = ord_krig, map_pred = r_pred, map_var = r_vari)
         }
       
     }
