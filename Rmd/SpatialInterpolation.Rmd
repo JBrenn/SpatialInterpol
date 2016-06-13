@@ -1,0 +1,203 @@
+---
+title: "Spatial Interpolation"
+author: "Johannes Brenner"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+runtime: shiny
+---
+
+***
+
+This R Markdown document is made interactive using Shiny. To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+***
+
+```{r, include=FALSE}
+
+if(!require("SpatialInterpol"))
+{
+  if(!require("devtools"))
+  {
+    install.packages(devtools)
+    require("devtools")
+  }
+  install_github("SpatialInterpol", "JBrenn")
+  require("SpatialInterpol")
+}
+
+
+if(!require("leaflet"))
+{
+  install.packages(leaflet)
+  require("leaflet")
+}
+
+if(!require("raster"))
+{
+  install.packages(raster)
+  require("raster")
+}
+
+if(!require("rgdal"))
+{
+  install.packages(rgdal)
+  require("rgdal")
+}
+
+wpath <- "/home/jbre/Schreibtisch/krig/"
+
+# observation data
+masterfile <- dir(file.path(wpath, "master"))
+data <- read.csv(file.path(wpath, "master", masterfile), header = T)
+
+# lat / long
+coordsys = "+proj=utm +zone=32 ellps=WGS84"
+xy <- project(xy = cbind(data$x_Coord, data$y_Coord), proj = coordsys, inv = T)
+long <- xy[,1]; lat <- xy[,2]
+
+```
+
+#### Interactive 
+
+```{r, echo=FALSE}
+inputPanel(
+  
+  selectInput(inputId = "variable", label = "discover variable", choices = dimnames(data)[[2]][c(7,8,10:17)], selected = "Humus____"),
+  
+  radioButtons(inputId = "method", label = "multi parameter sets", choices = c("YES","NO"), selected = "NO"),
+  
+  numericInput(inputId = "nrSim", label = "number of simulations", value = 1, min = 1, max = 1000, step = 1), 
+  
+  numericInput(inputId = "nrPoints", label = "number of points of interest", value = 500, min = 100, max = 15000, step = 1), 
+  
+  numericInput(inputId = "long", label = "area of interest | longitude", value = 11.14),
+  numericInput(inputId = "lat", label = "area of interest | latitude", value = 46.47),
+  
+  numericInput(inputId = "intA", label = "area of interest | A", value = 11000, min = 0, max = 100000, step = 1), 
+  
+  radioButtons(inputId = "doglobal", label = "use global kriging?", choices = c("YES","NO"), selected = "NO")
+  
+  
+)
+
+```
+
+***
+
+#### Interactive Map
+
+```{r, echo=FALSE}
+
+renderLeaflet({
+  
+  xy_sp <- SpatialPointsDataFrame(coords =  cbind(data$x_Coord, data$y_Coord), proj4string = CRS(coordsys), data = data[,c("FID",input$variable)])
+  
+  xy <- project(xy = cbind(input$long, input$lat), proj = coordsys, inv = F)
+  mat <- cbind(long = c(xy[1,1],xy[1,1]+input$intA,xy[1,1]+input$intA,xy[1,1]), 
+                lat = c(xy[1,2],xy[1,2],xy[1,2]+input$intA, xy[1,2]+input$intA))
+  P1  <- Polygon(mat)
+  Ps1 <- Polygons(list(P1), ID = "a")
+  SPs <- SpatialPolygons(list(Ps1), proj4string = CRS(coordsys))
+  
+  #pointsIN <- xy_sp[SPs]
+  pointsIN <- over(xy_sp,SPs)
+  #pointsIN <- na.omit(pointsIN) 
+  pointsIN <- which(!is.na(pointsIN))
+  pt.poly <- xy_sp[pointsIN,]  
+    #pointsINdf <- SpatialPointsDataFrame(pointsIN, data = data[,c("FID",input$variable)])
+  pointsIN_latlong <- project(xy = pt.poly@coords, proj = coordsys, inv = T)
+  
+  # write out in master files
+  df_out <- data.frame(pt.poly@data, pt.poly@coords)
+  names(df_out) <- c(names(pt.poly@data), "x_Coord", "y_Coord")
+  
+  sim_path <- "sim"
+  dir.create(file.path(wpath, sim_path, "master"), recursive = T)
+  write.csv(x = df_out, file = file.path(wpath, sim_path, "master",paste("masterfile_",sim_path,".txt",sep="")), row.names = F, quote = F)
+  
+if (input$doglobal == "YES")
+{
+  global <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = NA, local = FALSE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
+
+r_global <-  global[[sim_path]]$map_pred
+}
+  
+local <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = NA, local = TRUE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
+  
+r_local <-  local[[sim_path]]$map_pred
+
+latlong <- as.data.frame(project(mat,  proj = coordsys, inv = T))
+
+if (input$doglobal == "YES") {
+  all_val <-  c(values(r_global),values(r_local))
+} else {
+  all_val <-  values(r_local)
+}
+
+pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), all_val, na.color = "transparent")
+
+m <- leaflet() %>%  
+  addTiles(group = "OSM (default)") %>%
+  addRasterImage(x = r_local,  colors = pal, opacity = 0.8, group = "local kriging")  %>% 
+   addLegend(pal = pal, values = all_val, title = input$variable, position = "topleft")  %>% 
+  addCircleMarkers(lng=long, lat = lat, radius = 3, group = "observations", opacity = .5, color = "orange",
+                   popup = paste(data$ComuneCata, data$TipoColtur, "| ", input$variable, data[,input$variable]),
+             clusterOptions = markerClusterOptions()) %>%
+  addPolygons(data = latlong, lng = ~long, lat = ~lat, fill = F, weight = 2, color = "#FFFFCC", group = "area of interest")  %>% 
+  addCircleMarkers(lng=input$long, lat=input$lat, radius=2.5, fill = T, color = "red", popup = "input point") %>%
+  addCircleMarkers(lng=pointsIN_latlong[,1], lat=pointsIN_latlong[,2], radius=1.5, fill = F, color = "grey", group = "points of interest")
+  
+if (input$doglobal == "YES") {
+  m <- m  %>% 
+  addRasterImage(x = r_global, colors = pal, opacity = 0.8, group = "global kriging")
+  overlayGroups <- c("observations", "area of interest", "points of interest", "local kriging", "global kriging")
+} else {
+  overlayGroups <- c("observations", "area of interest", "points of interest", "local kriging")
+}
+
+m <- m %>%
+      addLayersControl(
+    overlayGroups = overlayGroups, options = layersControlOptions(collapsed = FALSE))
+m  
+
+})
+
+```
+  
+***
+
+#### Interactive 
+
+```{r, echo=FALSE}
+inputPanel(
+  
+  numericInput(inputId = "cutoff", label = "cutoff", value = 400, min = 0, max = 10000, step = 1),
+  numericInput(inputId = "anis_deg", label = "anis_deg", value = 0, min = 0, max = 360, step = 1), 
+  numericInput(inputId = "anis_ax", label = "anis_ax", value = 0.5, min = 0, max = 1, step = 0.01), 
+  numericInput(inputId = "psill", label = "psill", value = 1),
+  numericInput(inputId = "nugget", label = "nugget", value = 1),
+  numericInput(inputId = "nmax", label = "nmax", value = 100),
+  numericInput(inputId = "nmin", label = "nmin", value = 25),
+  numericInput(inputId = "omax", label = "omax", value = 5),
+  
+  selectInput(inputId = "model", label = "model", choices = c("Exp",  "Sph", "Gau", "Mat"), selected = "Sph"),
+  numericInput(inputId = "npix", label = "resolution", value = 100, min = 0, max = 1000, step = 1)
+)
+
+```
+
+***
+
+####Summary Table on Goodness of Fit (GOF)
+
+
+```{r, echo=FALSE}
+
+renderDataTable({
+  data
+}, options = list(pageLength=5, lengthMenu=c(5, 10, 15, 20)))
+
+```
+
+***
+
