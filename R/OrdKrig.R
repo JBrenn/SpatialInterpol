@@ -231,7 +231,10 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
             ord_krig <- gstat::krige(formula = worktab$VARIABLE~1, locations = worktab, newdata = mask_sppxdf, model = m)
             locglob <- "global"
           }
-        
+          
+          arg_spec <- paste(model, psill[namezone], cutoff[namezone], nugget[namezone], anis_deg[namezone], anis_ax[namezone],
+                            nmax[namezone], nmin[namezone], omax[namezone], 
+                            sep="_")
           
           names(ord_krig) <- c("predict", "variance")
           
@@ -242,9 +245,9 @@ OrdKrig <- function ( wpath = "/home/jbre/R/OrdKrig",
           # different possible formats see ?writeRaster
           dir.create(file.path(wpath, variable, "maps"), recursive = T)
           print("write .tif map files")
-          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_predict_sp_krige.tif",sep="")),
+          writeRaster(x = r_pred, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_predict_sp_krige_",arg_spec,".tif",sep="")),
                       overwrite=TRUE, format="GTiff")
-          writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_variance_sp_krige.tif",sep="")),
+          writeRaster(x = r_vari, filename = file.path(wpath, variable, "maps", paste(namezone, "_", variable, "_", npix, "_", locglob, "_variance_sp_krige_",arg_spec,".tif",sep="")),
                       overwrite=TRUE, format="GTiff")
           
           val_list[[namezone]] <- list(vario = my_var, vario_fit = my_var_fit, krig = ord_krig, map_pred = r_pred, map_var = r_vari)
