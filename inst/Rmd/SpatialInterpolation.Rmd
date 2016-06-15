@@ -48,6 +48,7 @@ coordsys = "+proj=utm +zone=32 ellps=WGS84"
 
 masterfile <- dir(file.path(wpath,"master"), full.names = T)
 data <- read.csv(masterfile, header = T)
+
 ```
 
 #### Interactive 1
@@ -55,18 +56,14 @@ data <- read.csv(masterfile, header = T)
 ```{r, echo=FALSE}
 inputPanel(
   
-  selectInput(inputId = "variable", label = "discover variable", choices = dimnames(data)[[2]][c(7,8,10:17)], selected = "Humus____"),
-  
-  radioButtons(inputId = "method", label = "multi parameter sets", choices = c("YES","NO"), selected = "YES"),
-  
-  numericInput(inputId = "nrSim", label = "number of simulations", value = 1, min = 1, max = 1000, step = 1), 
-  
-  numericInput(inputId = "nrPoints", label = "number of points of interest", value = 500, min = 100, max = 15000, step = 1), 
-  
   numericInput(inputId = "long", label = "area of interest | longitude", value = 11.14),
   numericInput(inputId = "lat", label = "area of interest | latitude", value = 46.47),
   
   numericInput(inputId = "intA", label = "area of interest | A", value = 11000, min = 0, max = 100000, step = 1), 
+  
+  selectInput(inputId = "variable", label = "discover variable", choices = dimnames(data)[[2]][c(7,8,10:17)], selected = "Humus____"),
+  
+  radioButtons(inputId = "mask", label = "use raster mask", choices = c("YES","NO"), selected = "YES"),
   
   actionButton("go1", "Apply changes")
   
@@ -154,9 +151,27 @@ p2 <- eventReactive(input$go2, {
   dir.create(file.path(wpath, sim_path, "master"), recursive = T)
   write.csv(x = df_out, file = file.path(wpath, sim_path, "master", paste("masterfile_",area,".txt",sep="")), row.names = F, quote = F)
   
+  # use mask?
+  if (input$mask == "YES" & !file.exists(file.path(wpath, sim_path, "mask", "mask.tif")))
+  {
+    mask_org_file <- grep(x = dir(file.path(wpath, "mask")), pattern = ".tif")[1]
+    mask_org_file <- dir(file.path(wpath, "mask"), full.names = T)[mask_org_file]
+    mask <- raster(mask_org_file)
+    crs(mask) <- coordsys
+    mask_masked <- mask(mask, SPs)
+    dir.create(file.path(wpath, sim_path, "mask"), recursive = T)
+    writeRaster(x = mask_masked, filename = file.path(wpath, sim_path, "mask", "mask.tif"))
+  }
+  
+  if (input$mask == "YES") {
+    rastermask <- "mask/mask.tif"            
+  } else {
+    rastermask = NA
+  }
+  
 if (input$doglobal == "YES" & !any(grep("global", dir(file.path(wpath, sim_path, input$variable, "maps")))))
 {
-  global <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = NA, local = FALSE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
+  global <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = rastermask, local = FALSE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
 
 r_global <-  global[[area]]$map_pred
 }
@@ -167,7 +182,7 @@ if (any(grep("global", dir(file.path(wpath, sim_path, input$variable, "maps"))))
   r_global <- raster(files[which2load])
 }  
   
-local <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = NA, local = TRUE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
+local <- OrdKrig(wpath = file.path(wpath, sim_path), datafolder = "master", rastermask = rastermask, local = TRUE, variable = input$variable, inverseDistWeigths = FALSE, npix = input$npix, cutoff = input$cutoff, anis_deg = input$anis_deg, anis_ax = input$anis_ax, psill = input$psill, nugget = input$nugget, nmax = input$nmax, nmin = input$nmin, omax = input$omax, model = input$model, validation = FALSE)
   
 r_local <-  local[[area]]$map_pred
 
@@ -249,19 +264,6 @@ inputPanel(
   actionButton("go2", "Apply changes")
   
 )
-
-```
-
-***
-
-####Summary Table on Goodness of Fit (GOF)
-
-
-```{r, echo=FALSE}
-
-renderDataTable({
-  data
-}, options = list(pageLength=5, lengthMenu=c(5, 10, 15, 20)))
 
 ```
 
